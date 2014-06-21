@@ -2,33 +2,22 @@
 #include<fstream>
 #include<vector>
 #include<cctype>
+#include<regex>
+#include<boost/algorithm/string.hpp>
 using namespace std;
 struct obj{
 	float x;
 	float y;
 	vector<string> ss;
-	obj (string r){
-		int l = r.size();
-		int in_s = 0;
-		int text_p = 0;
-		for(int i=0;i<l;){
-			if(r[i]=='"'){
-				in_s = !in_s;
-				if(in_s&&r.substr(i+1,4)=="addr"){
-					text_p = 1;
-					i += 6;
-					in_s = 0;
-				}else{
-					i += 1;
-				}
-				continue;
-			}
-			if(in_s&&text_p){
-				int j = i;
-				while(1){
-					char c = 
-					if(
+	obj (string s){
+		regex r("\"addr\" : \"([^\"]*)\".*\"latlng\" : \[ ([^,]*), ([^,]*) \], \"name\" : \"([^\"]*)\")");
+		smatch m;
+		regex_search(s,m,r);
+		x = m[2].
+
+
 }
+
 
 void build_index(string fname){
 	ifstream ifs(fname);
