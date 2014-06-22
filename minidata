@@ -1,0 +1,1 @@
+{ "_id" : 1000010, "addr" : "Gillman Heights Condominium\n1A Gillman Heights, Singapore 100001", "fetdt" : { "$date" : 1345018964614 }, "latlng" : [ 1.281933, 103.80321 ], "name" : "Gillman Heights Condominium", "pcode" : 100001, "url" : "http://gothere.sg/maps#q:100001" }

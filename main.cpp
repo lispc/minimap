@@ -3,31 +3,64 @@
 #include<vector>
 #include<cctype>
 #include<regex>
-#include<boost/algorithm/string.hpp>
+#include<sstream>
+#include<algorithm>
 using namespace std;
-struct obj{
+struct Obj{
 	float x;
 	float y;
-	vector<string> ss;
-	obj (string s){
-		regex r("\"addr\" : \"([^\"]*)\".*\"latlng\" : \[ ([^,]*), ([^,]*) \], \"name\" : \"([^\"]*)\")");
-		smatch m;
-		regex_search(s,m,r);
-		x = m[2].
-
-
-}
-
-
+	vector<string> words;
+	Obj (string s){
+		cout<<s<<endl;
+		string p1 = ", \"addr\" : \"";
+		int pos0 = s.find(p1);
+		cout<<pos0<<endl;
+		cout<<s.substr(pos0);
+		int pos1 = pos0+p1.size();
+		int pos2 = s.find("\"",pos1);
+		string addr = s.substr(pos1,pos2-pos1);
+		cout<<addr<<endl;
+		exit(0);
+		/*
+		string p2 = ", \"latlang\" : [ ";
+		int pos1 = s.find(p1)+p1.size();
+		int pos2 = s.find(pos1,"\"",pos1);
+		string addr = s.substr(pos1,pos2-pos1);
+		cout<<addr<<endl;
+		string p1 = ", \"addr\" : \"";
+		int pos1 = s.find(p1)+p1.size();
+		int pos2 = s.find(pos1,"\"",pos1);
+		string addr = s.substr(pos1,pos2-pos1);
+		cout<<addr<<endl;
+		stringstream ss(string(m[0])+" "+string(m[3]));
+		string word;
+		while(getline(ss,word)){
+			if(isdigit(word[0]))
+				continue;
+			word.erase(word.find_last_not_of(",")+1);
+			transform(word.begin(),word.begin(),word.begin(),::tolower);
+			this->words.push_back(word);
+		}
+		sort(this->words.begin(),this->words.end());
+		unique(this->words.begin(),this->words.end());
+		*/
+	}
+	friend ostream& operator<<(ostream& os,const Obj& o){
+		os<<"["<<o.x<<"\t"<<o.y<<"]\t";
+		copy(o.words.begin(),o.words.end(),ostream_iterator<string>(os," "));
+		os<<endl;
+		return os;
+	}
+};
+vector<Obj> objs;
 void build_index(string fname){
 	ifstream ifs(fname);
-{ "_id" : 1000010, "addr" : "Gillman Heights Condominium\n1A Gillman Heights, Singapore 100001", "fetdt" : { "$date" : 1345018964614 }, "latlng" : [ 1.281933, 103.80321 ], "name" : "Gillman Heights Condominium", "pcode" : 100001, "url" : "http://gothere.sg/maps#q:100001" }
-{ "_id" : 1000440, "addr" : "44 Telok Blangah Drive\nSingapore 100044", "fetdt" : { "$date" : 1345018961499 }, "latlng" : [ 1.271687, 103.810585 ], "name" : "44 Telok Blangah Drive", "pcode" : 100044, "url" : "http://gothere.sg/maps#q:100044" }
-{ "_id" : 1000450, "addr" : "45 Telok Blangah Drive\nSingapore 100045", "fetdt" : { "$date" : 1345018961534 }, "latlng" : [ 1.272116, 103.80951 ], "name" : "45 Telok Blangah Drive", "pcode" : 100045, "url" : "http://gothere.sg/maps#q:100045" }
-{ "_id" : 1000460, "addr" : "46 Telok Blangah Drive\nSingapore 100046", "fetdt" : { "$date" : 1345018961538 }, "latlng" : [ 1.271791, 103.80994 ], "name" : "46 Telok Blangah Drive", "pcode" : 100046, "url" : "http://gothere.sg/maps#q:100046" }
-{ "_id" : 1000470, "addr" : "47 Telok Blangah Drive\nSingapore 100047", "fetdt" : { "$date" : 1345018961540 }, "latlng" : [ 1.2721345, 103.81018 ], "name" : "47 Telok Blangah Drive", "pcode" : 100047, "url" : "http://gothere.sg/maps#q:100047" }
-{ "_id" : 1000480, "addr" : "48 Telok Blangah Drive\nSingapore 100048", "fetdt" : { "$date" : 1345018961542 }, "latlng" : [ 1.272443, 103.81064 ], "name" : "48 Telok Blangah Drive", "pcode" : 100048, "url" : "http://gothere.sg/maps#q:100048" }
-{ "_id" : 1000490, "addr" : "49 Telok Blangah Drive\nSingapore 100049", "fetdt" : { "$date" : 1345018961544 }, "latlng" : [ 1.272299, 103.81114 ], "name" : "49 Telok Blangah Drive", "pcode" : 100049, "url" : "http://gothere.sg/maps#q:100049" }
-{ "_id" : 1000500, "addr" : "50 Telok Blangah Drive\nSingapore 100050", "fetdt" : { "$date" : 1345018961546 }, "latlng" : [ 1.2731825, 103.81023 ], "name" : "50 Telok Blangah Drive", "pcode" : 100050, "url" : "http://gothere.sg/maps#q:100050" }
-{ "_id" : 1000510, "addr" : "51 Telok Blangah Drive\nSingapore 100051", "fetdt" : { "$date" : 1345018961548 }, "latlng" : [ 1.2736145, 103.81023 ], "name" : "51 Telok Blangah Drive", "pcode" : 100051, "url" : "http://gothere.sg/maps#q:100051" }
-{ "_id" : 1000520, "addr" : "52 Telok Blangah Drive\nSingapore 100052", "fetdt" : { "$date" : 1345018961550 }, "latlng" : [ 1.2739435, 103.811325 ], "name" : "52 Telok Blangah Drive", "pcode" : 100052, "url" : "http://gothere.sg/maps#q:100052" }
+	string line;
+	while(getline(ifs,line)){
+		objs.push_back(Obj(line));
+	}
+	copy(objs.begin(),objs.end(),ostream_iterator<Obj>(cout,""));
+}
+int main(){
+	build_index("minidata");
+}
