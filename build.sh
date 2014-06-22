@@ -1,2 +1,2 @@
-g++-4.8 -std=c++11 main.cpp -o exe
+clang++ -std=c++11 -stdlib=libc++ main.cpp -o exe
 ./exe
