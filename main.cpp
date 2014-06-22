@@ -15,6 +15,9 @@
 #include<algorithm>
 #include<queue>
 #include<cmath>
+#define NODE 1
+#define OBJ 2
+#define M
 using namespace std;
 struct Obj{
 	float x;
@@ -60,7 +63,39 @@ struct PRNode
     float l;
     float r;
     bool is_leaf;
+    vector<int> obj_ids;
+    vector<PRNode*> childs;
+    PRNode(vector<int> ids){
+        b = 90;
+        u = 0;
+        l = 180;
+        r = 0;
+        float x_mean = 0;
+        float y_mean = 0;
+        for(int i=0;i<ids.size();i++){
+            int obj_id = ids[i];
+            float x = objs[obj_id].x;
+            float y = objs[obj_id].y;
+            if(x<l)
+                l = x;
+            if(x>r)
+                r = x;
+            if(y<b)
+                b = y;
+            if(y>u)
+                u = y;
+            x_mean += x;
+            y_mean += y;
+        }
+        if(ids.size()<=M){
+            obj_ids = ids;
+            is_leaf = true;
+        }else{
+            
+        }
+    }
 };
+PRNode* root;
 void build_index(string fname){
     ifstream ifs(fname);
     string line;
@@ -68,14 +103,29 @@ void build_index(string fname){
         objs.push_back(Obj(line));
     }
     //copy(objs.begin(),objs.end(),ostream_iterator<Obj>(cout,""));
+    int obj_size = objs.size();
+    //float x_min = 0;
+    //float y_min = 0;
+    //float l
+    vector<int> init_obj_ids;
+    for(int i=0;i<obj_size;i++){
+        init_obj_ids.push_back(i);
+    }
+    root = new PRNode(
 
 }
 
 struct Qe{
-    int type;//pnode 1 po 2
-    PRNode* pnode;
-    Obj* po;
+    int type;//pn 1 po 2
+    PRNode* pn;
+    int po;//index
     float dis;
+    Qe(int type,PRNode* pn,int po,float dis){
+        type = type;
+        pn = pn;
+        po = po;
+        dis = dis;
+    }
 };
 bool operator<(const Qe& a,const Qe& b){
     return a.dis<b.dis;
@@ -109,9 +159,20 @@ float dis(PRNode n,float x,float y){
             exit(-1);
     }
 }
-void search(int n,string p,float x,float y,vector<string> words){
-    queue<Qe> q;
-    
+vector<int> search(int n,string p,float x,float y,vector<string> words){
+    vector<int> res;
+    priority_queue<Qe> q;
+    q.push(Qe(NODE,root,nullptr,0));
+    while(res.size()<n&&!q.empty()){
+        Qe e = q.top();
+        q.pop();
+        if(e.type==OBJ){
+            res.push_back(e.po);
+        }else if(e.pn->is_leaf){
+            for(auto )
+        }
+        
+    }
     
 }
 int main(){
