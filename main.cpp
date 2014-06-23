@@ -21,9 +21,10 @@
 #define OBJ 2
 #define M 4
 using namespace std;
+int pr_id;
 struct Obj{
-	float x;
-	float y;
+	double x;
+	double y;
 	vector<string> words;
 	Obj (string s){
         smatch m;
@@ -59,19 +60,18 @@ struct Obj{
 vector<Obj> objs;
 struct PRNode
 {
+    int node_id;
     string pre;
-    float b;
-    float u;
-    float l;
-    float r;
+    double b;
+    double u;
+    double l;
+    double r;
     bool is_leaf;
     vector<int> obj_ids;
     vector<PRNode*> childs;
     PRNode(vector<int>& ids,string pre){
+        node_id = pr_id++;
         cout<<"build with "<<pre<<" and:"<<endl;
-        /*
-        copy(ids.begin(),ids.end(),ostream_iterator<int>(cout," "));
-         */
         for(int i=0;i<ids.size();i++){
             int id = ids[i];
             cout<<id<<" ";
@@ -79,17 +79,15 @@ struct PRNode
             cout<<endl;
         }
         cout<<endl;
-        pre = pre;
+        this->pre = pre;
         b = 90;
         u = -90;
         l = 180;
         r = -180;
-        float x_mean = 0;
-        float y_mean = 0;
         for(int i=0;i<ids.size();i++){
             int obj_id = ids[i];
-            float x = objs[obj_id].x;
-            float y = objs[obj_id].y;
+            double x = objs[obj_id].x;
+            double y = objs[obj_id].y;
             if(x<l)
                 l = x;
             if(x>r)
@@ -98,11 +96,7 @@ struct PRNode
                 b = y;
             if(y>u)
                 u = y;
-            x_mean += x;
-            y_mean += y;
         }
-        x_mean/=ids.size();
-        y_mean/=ids.size();
         if(ids.size()<=M){
             obj_ids = ids;
             is_leaf = true;
@@ -128,38 +122,33 @@ struct PRNode
             }
             for(int i=0;i<256;i++){
                 if(vvi[i].size()>0){
-                    /*(
-                     vector<int> ll;
-                     vector<int> ul;
-                     vector<int> lr;
-                     vector<int> ur;
-                     */
                     vector<vector<int>> vvi_inner;
                     for(int t=0;t<4;t++){
                         vvi_inner.push_back(vector<int>());
                     }
+                    double x_mean = 0;
+                    double y_mean = 0;
+                    for(int index_text_node=0;index_text_node<vvi[i].size();index_text_node++){
+                        int obj_id = vvi[i][index_text_node];
+                        double x = objs[obj_id].x;
+                        double y = objs[obj_id].y;
+                        x_mean += x;
+                        y_mean += y;
+
+                    }
+                    x_mean/=vvi[i].size();
+                    y_mean/=vvi[i].size();
                     for(int j=0;j<vvi[i].size();j++){
                         int n_id = vvi[i][j];
-                        float n_x = objs[n_id].x;
-                        float n_y = objs[n_id].y;
+                        double n_x = objs[n_id].x;
+                        double n_y = objs[n_id].y;
                         int pos = 2*(int(n_y<y_mean))+(int(n_x>x_mean));
-                        /*
-                         if(pos==0){
-                         ul.push_back(n_id);
-                         }else if(pos==1){
-                         ur.push_back(n_id);
-                         }else if(pos==2){
-                         ll.push_back(n_id);
-                         }else{
-                         lr.push_back(n_id);
-                         }
-                         */
                         vvi_inner[pos].push_back(n_id);
                     }
                     string new_pre = pre;
                     new_pre.append(1,(char)((unsigned char)i));
                     for(int f=0;f<4;f++){
-                        if(vvi_inner[i].size()>0){
+                        if(vvi_inner[f].size()>0){
                             PRNode* new_node = new PRNode(vvi_inner[f],new_pre);
                             childs.push_back(new_node);
                         }
@@ -176,15 +165,29 @@ public:
     int type;//pn 1 po 2
     PRNode* pn;
     int po;//index
-    float dis;
-    Qe(int type,PRNode* pn,int po,float dis){
-        type = type;
-        pn = pn;
-        po = po;
-        dis = dis;
+    double dis;
+    Qe(int type,PRNode* pn,int po,double dis){
+        this->type = type;
+        this->pn = pn;
+        this->po = po;
+        this->dis = dis;
     }
     bool operator< (const Qe& b) const{
-        return this->dis<b.dis;
+        /*
+        if(type==NODE){
+            cout<<"I am NODE "<<pn->node_id<<endl;
+        }else{
+            cout<<"I am OBJ "<<po<<endl;
+        }
+        cout<<dis<<endl;
+        if(b.type==NODE){
+            cout<<"It is NODE "<<b.pn->node_id<<endl;
+        }else{
+            cout<<"It is OBJ "<<b.po<<endl;
+        }
+        cout<<b.dis<<endl;
+         */
+        return this->dis>b.dis;
     }
 };
 PRNode* root;
@@ -202,11 +205,11 @@ void build_index(string fname){
     }
     root = new PRNode(init_obj_ids,"");
 }
-inline float ldis(float x1,float y1,float x2,float y2){
-    return sqrt((x1-y1)*(x1-y1)+(x2-y2)*(x2-y2));
+inline double ldis(double x1,double y1,double x2,double y2){
+    return sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
 }
-float dis(PRNode *n,float x,float y){
-    int pos = 3*(y<n->u+y<n->l)+(x>n->r+x>n->l);
+double dis(PRNode *n,double x,double y){
+    int pos = 3*(int(y<n->u)+int(y<n->b))+(int(x>n->r)+int(x>n->l));
     switch (pos) {
         case 0:
             return ldis(x,y,n->l,n->u);
@@ -231,7 +234,27 @@ float dis(PRNode *n,float x,float y){
             exit(-1);
     }
 }
-vector<int> search(int n,string qp,float x,float y,vector<string> words){
+void dump_tree(int level,PRNode* p){
+    string indent;
+    indent.append(level,' ');
+    cout<<indent<<"Level "<<level<<endl;
+    cout<<indent<<(p->is_leaf?"Leaf":"Inner")<<" ID "<<p->node_id<<endl;
+    cout<<indent<<p->b<<" "<<p->u<<" "<<p->l<<" "<<p->r<<" "<<p->pre<<endl;
+    if(p->is_leaf){
+        for(int i=0;i<p->obj_ids.size();i++){
+            int id = p->obj_ids[i];
+            cout<<indent<<id<<" ";
+            copy(objs[id].words.begin(),objs[id].words.end(),ostream_iterator<string>(cout," "));
+            cout<<endl;
+        }
+    }else{
+        for(int i=0;i<p->childs.size();i++){
+            dump_tree(level+1, p->childs[i]);
+        }
+    }
+    cout<<endl;
+}
+vector<int> search(int n,string qp,double x,double y,vector<string> words){
     vector<int> res;
     priority_queue<Qe> q;
     q.push(Qe(NODE,root,0,0));
@@ -239,16 +262,24 @@ vector<int> search(int n,string qp,float x,float y,vector<string> words){
         Qe e = q.top();
         q.pop();
         if(e.type==OBJ){
+            cout<<"pop OBJ "<<e.po<<" "<<e.dis<<endl;
             res.push_back(e.po);
-        }else if(e.pn->is_leaf){
-            for(int id:e.pn->obj_ids){
-                q.push(Qe(OBJ,nullptr,id,ldis(x,y,objs[id].x,objs[id].y)));
-            }
-        }else{//inner node
-            for(PRNode* p:e.pn->childs){
-                string tree_pre = p->pre;
-                if(tree_pre.substr(qp.size())==qp||qp.substr(tree_pre.length())==tree_pre){
-                    q.push(Qe(NODE,p,0,dis(p,x,y)));
+        }else{
+            cout<<"pop NODE "<<e.pn->node_id<<" "<<e.dis<<endl;
+            if(e.pn->is_leaf){
+                for(int id:e.pn->obj_ids){
+                    double dd = ldis(x,y,objs[id].x,objs[id].y);
+                    cout<<"pushing OBJ "<<id<<" dis "<<dd<<endl;
+                    q.push(Qe(OBJ,nullptr,id,dd));
+                }
+            }else{//inner node
+                for(PRNode* p:e.pn->childs){
+                    string tree_pre = p->pre;
+                    if(tree_pre.substr(0,qp.size())==qp||qp.substr(0,tree_pre.length())==tree_pre){
+                        double d = dis(p,x,y);
+                        cout<<"pushing NODE "<<p->node_id<<" dis "<<d<<endl;
+                        q.push(Qe(NODE,p,0,d));
+                    }
                 }
             }
         }
@@ -260,8 +291,14 @@ int main(){
         string f = "/Users/zhuo.zhang/Projects/minimap/minidata";
         f = "/Users/zhuo.zhang/Projects/minimap/sample_data";
         build_index(f);
+        dump_tree(0, root);
+        double q_x = -74.0;
+        double q_y = 40.5;
+        for(int i=0;i<objs.size();i++){
+            cout<<i<<" "<<ldis(q_x,q_y,objs[i].x,objs[i].y)<<endl;
+        }
         vector<string> vs;
-        vector<int> res = search(2,"p",40.5,-74.0,vs);
+        vector<int> res = search(5,"p",q_x,q_y,vs);
         for(int i: res){
             cout<<i<<endl;
         }
