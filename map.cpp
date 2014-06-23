@@ -347,36 +347,63 @@ vector<int> search(int n,string qp,double x,double y,vector<string> words){
 	}
 	return res;
 }
-void search_and_output(int n,string qp,double x,double y,vector<string> words){
-	vector<int> res = search(n,qp,x,y,words);
+void output_res(vector<int> res,double x,double y){
 	for(int i: res){
 		cout<<i<<" "<<ldis(objs[i].x,objs[i].y,x,y)<<endl;
 		copy(objs[i].words.begin(),objs[i].words.end(),ostream_iterator<string>(cout," "));
 		cout<<endl;
 	}
 }
+void search_and_output(int n,string qp,double x,double y,vector<string> words){
+	vector<int> res = search(n,qp,x,y,words);
+	output_res(res,x,y);
+}
+//extern "C" {
+int init(){
+	string f = "/Users/zhuo.zhang/Projects/minimap/minidata";
+	//f = "/Users/zhuo.zhang/Projects/minimap/sample_data";
+	//f = "/Users/zhuo.zhang/Projects/minimap/zipcode-address.json";
+	f = "/Users/zhuo.zhang/Projects/minimap/300data";
+	//f = "/Users/zhuo.zhang/Projects/minimap/30data";
+	build_index(f);
+	//cout<<"build index finished"<<endl;
+	return 0;
+}
+vector<int> query(int n,double x,double y,string raw_words){
+	vector<int> res;
+	stringstream ss(raw_words);
+	string word;
+	vector<string> vs;
+	while(ss>>word){
+		transform(word.begin(),word.end(),word.begin(),::tolower);
+		vs.push_back(word);
+	}
+	if(vs.size()==0){
+		return res;
+	}
+	string qp = vs.back();
+	vs.pop_back();
+	res = search(n,qp,x,y,vs);
+	return res;
+}
+//}
 int main(){
 	try{
-		string f = "/Users/zhuo.zhang/Projects/minimap/minidata";
-		//f = "/Users/zhuo.zhang/Projects/minimap/sample_data";
-		//f = "/Users/zhuo.zhang/Projects/minimap/zipcode-address.json";
-		f = "/Users/zhuo.zhang/Projects/minimap/300data";
-		//f = "/Users/zhuo.zhang/Projects/minimap/30data";
-		build_index(f);
-		cout<<"build index finished"<<endl;
+		init();
 		bool batch = true;
-		batch = !batch;
+		//batch = !batch;
 		double q_x = -74.0;
 		double q_y = 40.5;
-		//q_x = 103.811516;
-		//q_y = 1.2744;
+		q_x = 103.811516;
+		q_y = 1.2744;
 		int q_n = 10;
-		q_n = 2;
+		//q_n = 2;
 		vector<string> vs;
 		vs.push_back("palace");
 		string q_p = "blangah";
 		q_p = "s";
 		string data = "70 Telok Blangah Heights Singapore 100070";
+		data = "Heights Singapore Blan";
 		if(batch==false){
 			while(1){
 				vs.clear();
@@ -398,7 +425,8 @@ int main(){
 				search_and_output(q_n,q_p,stod(x_s),stod(y_s),vs);
 			}
 		}else{ 
-			search_and_output(q_n,q_p,q_x,q_y,vs);
+			//search_and_output(q_n,q_p,q_x,q_y,vs);
+			output_res(query(q_n,q_x,q_y,data),q_x,q_y);
 		}
 	}catch(const exception& e){
 		cout<<e.what();

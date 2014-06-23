@@ -1,2 +1,3 @@
-clang++ -std=c++11 -stdlib=libc++ main.cpp -o exe
+clang++ -std=c++11 -stdlib=libc++ map.cpp -o exe
 #./exe
+#clang++ -std=c++11 -stdlib=libc++ -shared -O2 -o map.so -fPIC map.cpp 
