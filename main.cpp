@@ -16,19 +16,20 @@
 #include<queue>
 #include<cmath>
 #include<set>
+#include<unordered_map>
 #include<cstdlib>
 #define NODE 1
 #define OBJ 2
-#define M 4
+#define M 10
 using namespace std;
 int pr_id;
 struct Obj{
-	double x;
-	double y;
-	vector<string> words;
-	Obj (string s){
+    double x;
+    double y;
+    vector<string> words;
+    Obj (string s){
         smatch m;
-		string ptn = "\"addr\" : \"([^\"]+)\".*\"latlng\" : \\[ (\\S+), (\\S+) \\], \"name\" : \"([^\"]*)\"";
+        string ptn = "\"addr\" : \"([^\"]+)\".*\"latlng\" : \\[ (\\S+), (\\S+) \\], \"name\" : \"([^\"]*)\"";
         if(!regex_search(s,m,regex(ptn))){
             cout<<"no match"<<endl;
             cout<<s<<endl;
@@ -45,7 +46,12 @@ struct Obj{
         while(ss>>word){
             //if(isdigit(word[0]))
             //    continue;
-            word.erase(word.find_last_not_of(",")+1);
+            word.erase(0,word.find_first_not_of("("));
+            word.erase(word.find_last_not_of(",)")+1);
+            if(isdigit(word[0])&&word.length()>=6)
+                continue;
+            if(word=="")
+                continue;
             transform(word.begin(),word.end(),word.begin(),::tolower);
             words.push_back(word);
         }
@@ -203,42 +209,72 @@ public:
 PRNode* root;
 
 void dump_tree(int level,PRNode* p){
+    /*
     string indent;
     indent.append(level,' ');
     cout<<indent<<"Level "<<level<<endl;
     cout<<indent<<(p->is_leaf?"Leaf":"Inner")<<" ID "<<p->node_id<<endl;
     cout<<indent<<p->b<<" "<<p->u<<" "<<p->l<<" "<<p->r<<" "<<p->pre<<endl;
+    */
+    cout<<level;
     if(p->is_leaf){
+        cout<<" leaf"<<endl;
+        /*
         for(int i=0;i<p->obj_ids.size();i++){
             int id = p->obj_ids[i];
             cout<<indent<<id<<" ";
             copy(objs[id].words.begin(),objs[id].words.end(),ostream_iterator<string>(cout," "));
             cout<<endl;
-        }
+        }*/
     }else{
+        cout<<" node"<<endl;
         for(int i=0;i<p->childs.size();i++){
             dump_tree(level+1, p->childs[i]);
         }
     }
-    cout<<endl;
+    //cout<<endl;
 }
-
+vector<pair<string,int>> stat_str(){
+    unordered_map<string,int> freq;
+    vector<pair<string,int>> freq_v;
+    for(int i=0;i<objs.size();i++){
+        for(int j=0;j<objs[i].words.size();j++){
+            string w = objs[i].words[j];
+            auto it = freq.find(w);
+            if(it==freq.end()){
+                freq[w]=1;
+            }else{
+                freq[w]+=1;
+            }
+        }
+    }
+    copy(freq.begin(),freq.end(),back_inserter(freq_v));
+    sort(freq_v.begin(),freq_v.end(),[](const pair<string,int>& a,const pair<string,int>& b)->bool{
+        return a.second>b.second;
+    });
+    return freq_v;
+}
 void build_index(string fname){
     ifstream ifs(fname);
     string line;
     while(getline(ifs,line)){
         objs.push_back(Obj(line));
     }
-    cout<<"read finished"<<endl;
+    auto stat = stat_str();
+    for(auto i:stat){
+        //cout<<i.first<<" "<<i.second<<endl;
+    }
+    //exit(-1);
+    //cout<<"read finished"<<endl;
     auto obj_size = objs.size();
     vector<int> init_obj_ids;
     for(int i=0;i<obj_size;i++){
         init_obj_ids.push_back(i);
     }
     root = new PRNode(init_obj_ids,"");
-    //dump_tree(0, root);
-    cout<<"index finished"<<endl;
-    //exit(-1);
+    dump_tree(0, root);
+    //cout<<"index finished"<<endl;
+    exit(-1);
 }
 inline double ldis(double x1,double y1,double x2,double y2){
     return sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
@@ -306,7 +342,7 @@ int main(){
         string f = "/Users/zhuo.zhang/Projects/minimap/minidata";
         f = "/Users/zhuo.zhang/Projects/minimap/sample_data";
         f = "/Users/zhuo.zhang/Projects/minimap/zipcode-address.json";
-        f = "/Users/zhuo.zhang/Projects/minimap/300data";
+        //f = "/Users/zhuo.zhang/Projects/minimap/300data";
         //f = "/Users/zhuo.zhang/Projects/minimap/30data";
         build_index(f);
         cout<<"build index finished"<<endl;
