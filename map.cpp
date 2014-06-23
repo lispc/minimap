@@ -384,7 +384,7 @@ extern "C" {
 int init(){
 	string f = "/Users/zhuo.zhang/Projects/minimap/minidata";
 	//f = "/Users/zhuo.zhang/Projects/minimap/sample_data";
-	f = "/Users/zhuo.zhang/Projects/minimap/zipcode-address.json";
+	//f = "/Users/zhuo.zhang/Projects/minimap/zipcode-address.json";
 	f = "/Users/zhuo.zhang/Projects/minimap/300data";
 	//f = "/Users/zhuo.zhang/Projects/minimap/30data";
 	build_index(f);
