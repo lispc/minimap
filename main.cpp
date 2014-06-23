@@ -19,7 +19,7 @@
 #include<cstdlib>
 #define NODE 1
 #define OBJ 2
-#define M 10
+#define M 4
 using namespace std;
 struct Obj{
 	float x;
@@ -36,8 +36,8 @@ struct Obj{
          for(int i=0;i<m.size();i++){
          cout<<i<<" "<<m[i]<<endl;
          }*/
-        x = stof(m[2]);
-        y = stof(m[3]);
+        y = stof(m[2]);
+        x = stof(m[3]);
         stringstream ss(string(m[1]).substr(string(m[4]).length()+2)+" "+string(m[4]));
         string word;
         while(ss>>word){
@@ -68,11 +68,22 @@ struct PRNode
     vector<int> obj_ids;
     vector<PRNode*> childs;
     PRNode(vector<int>& ids,string pre){
+        cout<<"build with "<<pre<<" and:"<<endl;
+        /*
+        copy(ids.begin(),ids.end(),ostream_iterator<int>(cout," "));
+         */
+        for(int i=0;i<ids.size();i++){
+            int id = ids[i];
+            cout<<id<<" ";
+            copy(objs[id].words.begin(),objs[id].words.end(),ostream_iterator<string>(cout," "));
+            cout<<endl;
+        }
+        cout<<endl;
         pre = pre;
         b = 90;
-        u = 0;
+        u = -90;
         l = 180;
-        r = 0;
+        r = -180;
         float x_mean = 0;
         float y_mean = 0;
         for(int i=0;i<ids.size();i++){
@@ -96,6 +107,7 @@ struct PRNode
             obj_ids = ids;
             is_leaf = true;
         }else{
+            is_leaf = false;
             set<string> all_words;
             int charmap[256];
             vector<vector<int>> vvi;
@@ -104,10 +116,14 @@ struct PRNode
             }
             memset(charmap, 0, sizeof(charmap));
             for(int i=0;i<ids.size();i++){
-                for(int j=0;i<objs[i].words.size();j++){
-                    string w = objs[i].words[j];
+                int id = ids[i];
+                Obj oo = objs[id];
+                vector<string> this_words = oo.words;
+                unsigned long word_len = this_words.size();
+                for(int j=0;j<word_len;j++){
+                    string w = this_words[j];
                     int index = (unsigned int)((unsigned char)w[0]);
-                    vvi[index].push_back(i);
+                    vvi[index].push_back(id);
                 }
             }
             for(int i=0;i<256;i++){
@@ -122,11 +138,11 @@ struct PRNode
                     for(int t=0;t<4;t++){
                         vvi_inner.push_back(vector<int>());
                     }
-                    for(int j=0;j<vvi.size();j++){
+                    for(int j=0;j<vvi[i].size();j++){
                         int n_id = vvi[i][j];
                         float n_x = objs[n_id].x;
                         float n_y = objs[n_id].y;
-                        int pos = 2*(n_x<x_mean)+n_y>y_mean;
+                        int pos = 2*(int(n_y<y_mean))+(int(n_x>x_mean));
                         /*
                          if(pos==0){
                          ul.push_back(n_id);
@@ -144,7 +160,7 @@ struct PRNode
                     new_pre.append(1,(char)((unsigned char)i));
                     for(int f=0;f<4;f++){
                         if(vvi_inner[i].size()>0){
-                            PRNode* new_node = new PRNode(vvi_inner[i],new_pre);
+                            PRNode* new_node = new PRNode(vvi_inner[f],new_pre);
                             childs.push_back(new_node);
                         }
                         
