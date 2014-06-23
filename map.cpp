@@ -362,11 +362,11 @@ void search_and_output(int n,string qp,double x,double y,vector<string> words){
 int init(){
 	string f = "/Users/zhuo.zhang/Projects/minimap/minidata";
 	//f = "/Users/zhuo.zhang/Projects/minimap/sample_data";
-	//f = "/Users/zhuo.zhang/Projects/minimap/zipcode-address.json";
-	f = "/Users/zhuo.zhang/Projects/minimap/300data";
+	f = "/Users/zhuo.zhang/Projects/minimap/zipcode-address.json";
+	//f = "/Users/zhuo.zhang/Projects/minimap/300data";
 	//f = "/Users/zhuo.zhang/Projects/minimap/30data";
 	build_index(f);
-	//cout<<"build index finished"<<endl;
+	cout<<"build index finished"<<endl;
 	return 0;
 }
 vector<int> query(int n,double x,double y,string raw_words){
@@ -391,7 +391,7 @@ int main(){
 	try{
 		init();
 		bool batch = true;
-		//batch = !batch;
+		batch = !batch;
 		double q_x = -74.0;
 		double q_y = 40.5;
 		q_x = 103.811516;
@@ -402,14 +402,15 @@ int main(){
 		vs.push_back("palace");
 		string q_p = "blangah";
 		q_p = "s";
-		string data = "70 Telok Blangah Heights Singapore 100070";
-		data = "Heights Singapore Blan";
+		string data;
+		data = "drive Singapore Blan";
 		if(batch==false){
 			while(1){
 				vs.clear();
 				cout<<"prefix:";
 				cin>>q_p;
 				string vss;
+				cin.get();
 				cout<<"words:";
 				getline(cin,vss);
 				stringstream ss(vss);
