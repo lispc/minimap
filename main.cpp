@@ -31,6 +31,7 @@ struct Obj{
 		string ptn = "\"addr\" : \"([^\"]+)\".*\"latlng\" : \\[ (\\S+), (\\S+) \\], \"name\" : \"([^\"]*)\"";
         if(!regex_search(s,m,regex(ptn))){
             cout<<"no match"<<endl;
+            cout<<s<<endl;
             exit(-1);
         }
         /*
@@ -71,6 +72,8 @@ struct PRNode
     vector<PRNode*> childs;
     PRNode(vector<int>& ids,string pre){
         node_id = pr_id++;
+        //cout<<"build node "<<node_id<<endl;
+        /*
         cout<<"build with "<<pre<<" and:"<<endl;
         for(int i=0;i<ids.size();i++){
             int id = ids[i];
@@ -79,6 +82,7 @@ struct PRNode
             cout<<endl;
         }
         cout<<endl;
+         */
         this->pre = pre;
         b = 90;
         u = -90;
@@ -111,13 +115,13 @@ struct PRNode
             memset(charmap, 0, sizeof(charmap));
             for(int i=0;i<ids.size();i++){
                 int id = ids[i];
-                Obj oo = objs[id];
-                vector<string> this_words = oo.words;
-                unsigned long word_len = this_words.size();
+                unsigned long word_len = objs[id].words.size();
                 for(int j=0;j<word_len;j++){
-                    string w = this_words[j];
-                    int index = (unsigned int)((unsigned char)w[0]);
-                    vvi[index].push_back(id);
+                    string w = objs[id].words[j];
+                    int index = (unsigned int)((unsigned char)w[pre.length()]);
+                    if(vvi[index].size()==0||vvi[index].back()!=id){
+                        vvi[index].push_back(id);
+                    }
                 }
             }
             for(int i=0;i<256;i++){
@@ -191,19 +195,43 @@ public:
     }
 };
 PRNode* root;
+
+void dump_tree(int level,PRNode* p){
+    string indent;
+    indent.append(level,' ');
+    cout<<indent<<"Level "<<level<<endl;
+    cout<<indent<<(p->is_leaf?"Leaf":"Inner")<<" ID "<<p->node_id<<endl;
+    cout<<indent<<p->b<<" "<<p->u<<" "<<p->l<<" "<<p->r<<" "<<p->pre<<endl;
+    if(p->is_leaf){
+        for(int i=0;i<p->obj_ids.size();i++){
+            int id = p->obj_ids[i];
+            cout<<indent<<id<<" ";
+            copy(objs[id].words.begin(),objs[id].words.end(),ostream_iterator<string>(cout," "));
+            cout<<endl;
+        }
+    }else{
+        for(int i=0;i<p->childs.size();i++){
+            dump_tree(level+1, p->childs[i]);
+        }
+    }
+    cout<<endl;
+}
+
 void build_index(string fname){
     ifstream ifs(fname);
     string line;
     while(getline(ifs,line)){
         objs.push_back(Obj(line));
     }
-    copy(objs.begin(),objs.end(),ostream_iterator<Obj>(cout,""));
+    cout<<"read finished"<<endl;
     auto obj_size = objs.size();
     vector<int> init_obj_ids;
     for(int i=0;i<obj_size;i++){
         init_obj_ids.push_back(i);
     }
     root = new PRNode(init_obj_ids,"");
+    dump_tree(0, root);
+    exit(-1);
 }
 inline double ldis(double x1,double y1,double x2,double y2){
     return sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
@@ -234,26 +262,6 @@ double dis(PRNode *n,double x,double y){
             exit(-1);
     }
 }
-void dump_tree(int level,PRNode* p){
-    string indent;
-    indent.append(level,' ');
-    cout<<indent<<"Level "<<level<<endl;
-    cout<<indent<<(p->is_leaf?"Leaf":"Inner")<<" ID "<<p->node_id<<endl;
-    cout<<indent<<p->b<<" "<<p->u<<" "<<p->l<<" "<<p->r<<" "<<p->pre<<endl;
-    if(p->is_leaf){
-        for(int i=0;i<p->obj_ids.size();i++){
-            int id = p->obj_ids[i];
-            cout<<indent<<id<<" ";
-            copy(objs[id].words.begin(),objs[id].words.end(),ostream_iterator<string>(cout," "));
-            cout<<endl;
-        }
-    }else{
-        for(int i=0;i<p->childs.size();i++){
-            dump_tree(level+1, p->childs[i]);
-        }
-    }
-    cout<<endl;
-}
 vector<int> search(int n,string qp,double x,double y,vector<string> words){
     vector<int> res;
     priority_queue<Qe> q;
@@ -262,14 +270,14 @@ vector<int> search(int n,string qp,double x,double y,vector<string> words){
         Qe e = q.top();
         q.pop();
         if(e.type==OBJ){
-            cout<<"pop OBJ "<<e.po<<" "<<e.dis<<endl;
+            //cout<<"pop OBJ "<<e.po<<" "<<e.dis<<endl;
             res.push_back(e.po);
         }else{
-            cout<<"pop NODE "<<e.pn->node_id<<" "<<e.dis<<endl;
+            //cout<<"pop NODE "<<e.pn->node_id<<" "<<e.dis<<endl;
             if(e.pn->is_leaf){
                 for(int id:e.pn->obj_ids){
                     double dd = ldis(x,y,objs[id].x,objs[id].y);
-                    cout<<"pushing OBJ "<<id<<" dis "<<dd<<endl;
+                    //cout<<"pushing OBJ "<<id<<" dis "<<dd<<endl;
                     q.push(Qe(OBJ,nullptr,id,dd));
                 }
             }else{//inner node
@@ -277,7 +285,7 @@ vector<int> search(int n,string qp,double x,double y,vector<string> words){
                     string tree_pre = p->pre;
                     if(tree_pre.substr(0,qp.size())==qp||qp.substr(0,tree_pre.length())==tree_pre){
                         double d = dis(p,x,y);
-                        cout<<"pushing NODE "<<p->node_id<<" dis "<<d<<endl;
+                        //cout<<"pushing NODE "<<p->node_id<<" dis "<<d<<endl;
                         q.push(Qe(NODE,p,0,d));
                     }
                 }
@@ -290,17 +298,33 @@ int main(){
     try{
         string f = "/Users/zhuo.zhang/Projects/minimap/minidata";
         f = "/Users/zhuo.zhang/Projects/minimap/sample_data";
+        //f = "/Users/zhuo.zhang/Projects/minimap/zipcode-address.json";
+        f = "/Users/zhuo.zhang/Projects/minimap/300data";
+         f = "/Users/zhuo.zhang/Projects/minimap/30data";
         build_index(f);
-        dump_tree(0, root);
+        cout<<"build index finished"<<endl;
+        /*
+        while(1){
+        string in_pre;
+        cout<<"prefix:";
+        cin>>in_pre;
+        string in_x;
+        cout<<"x";
+        cin>>in_x;
+        */
         double q_x = -74.0;
         double q_y = 40.5;
-        for(int i=0;i<objs.size();i++){
-            cout<<i<<" "<<ldis(q_x,q_y,objs[i].x,objs[i].y)<<endl;
-        }
+        q_x = 103.811516;
+        q_y = 1.2744;
         vector<string> vs;
-        vector<int> res = search(5,"p",q_x,q_y,vs);
+        string q_p = "Blangah";
+        string data = "70 Telok Blangah Heights Singapore 100070";
+
+        vector<int> res = search(10,q_p,q_x,q_y,vs);
         for(int i: res){
-            cout<<i<<endl;
+            cout<<i<<" "<<ldis(objs[i].x,objs[i].y,q_x,q_y)<<endl;
+            copy(objs[i].words.begin(),objs[i].words.end(),ostream_iterator<string>(cout," "));
+            cout<<endl;
         }
     }catch(const exception& e){
         cout<<e.what();
