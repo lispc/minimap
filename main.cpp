@@ -118,6 +118,12 @@ struct PRNode
                 unsigned long word_len = objs[id].words.size();
                 for(int j=0;j<word_len;j++){
                     string w = objs[id].words[j];
+                    if(w.substr(0,pre.length())!=pre){
+                        continue;
+                    }
+                    if(w.length()<=pre.length()){
+                        //cout<<"dummy"<<endl;
+                    }
                     int index = (unsigned int)((unsigned char)w[pre.length()]);
                     if(vvi[index].size()==0||vvi[index].back()!=id){
                         vvi[index].push_back(id);
@@ -230,8 +236,9 @@ void build_index(string fname){
         init_obj_ids.push_back(i);
     }
     root = new PRNode(init_obj_ids,"");
-    dump_tree(0, root);
-    exit(-1);
+    //dump_tree(0, root);
+    cout<<"index finished"<<endl;
+    //exit(-1);
 }
 inline double ldis(double x1,double y1,double x2,double y2){
     return sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
@@ -270,14 +277,14 @@ vector<int> search(int n,string qp,double x,double y,vector<string> words){
         Qe e = q.top();
         q.pop();
         if(e.type==OBJ){
-            //cout<<"pop OBJ "<<e.po<<" "<<e.dis<<endl;
+            cout<<"pop OBJ "<<e.po<<" "<<e.dis<<endl;
             res.push_back(e.po);
         }else{
-            //cout<<"pop NODE "<<e.pn->node_id<<" "<<e.dis<<endl;
+            cout<<"pop NODE "<<e.pn->node_id<<" "<<e.dis<<endl;
             if(e.pn->is_leaf){
                 for(int id:e.pn->obj_ids){
                     double dd = ldis(x,y,objs[id].x,objs[id].y);
-                    //cout<<"pushing OBJ "<<id<<" dis "<<dd<<endl;
+                    cout<<"pushing OBJ "<<id<<" dis "<<dd<<endl;
                     q.push(Qe(OBJ,nullptr,id,dd));
                 }
             }else{//inner node
@@ -285,7 +292,7 @@ vector<int> search(int n,string qp,double x,double y,vector<string> words){
                     string tree_pre = p->pre;
                     if(tree_pre.substr(0,qp.size())==qp||qp.substr(0,tree_pre.length())==tree_pre){
                         double d = dis(p,x,y);
-                        //cout<<"pushing NODE "<<p->node_id<<" dis "<<d<<endl;
+                        cout<<"pushing NODE "<<p->node_id<<" dis "<<d<<endl;
                         q.push(Qe(NODE,p,0,d));
                     }
                 }
@@ -298,9 +305,9 @@ int main(){
     try{
         string f = "/Users/zhuo.zhang/Projects/minimap/minidata";
         f = "/Users/zhuo.zhang/Projects/minimap/sample_data";
-        //f = "/Users/zhuo.zhang/Projects/minimap/zipcode-address.json";
+        f = "/Users/zhuo.zhang/Projects/minimap/zipcode-address.json";
         f = "/Users/zhuo.zhang/Projects/minimap/300data";
-         f = "/Users/zhuo.zhang/Projects/minimap/30data";
+        //f = "/Users/zhuo.zhang/Projects/minimap/30data";
         build_index(f);
         cout<<"build index finished"<<endl;
         /*
@@ -317,7 +324,7 @@ int main(){
         q_x = 103.811516;
         q_y = 1.2744;
         vector<string> vs;
-        string q_p = "Blangah";
+        string q_p = "blangah";
         string data = "70 Telok Blangah Heights Singapore 100070";
 
         vector<int> res = search(10,q_p,q_x,q_y,vs);
