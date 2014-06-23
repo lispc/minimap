@@ -22,6 +22,7 @@
 #define OBJ 2
 #define M 10
 using namespace std;
+char py_buf[2048];
 unordered_map<string,vector<int>> stov;
 int pr_id;
 struct Obj{
@@ -29,9 +30,10 @@ struct Obj{
 	double y;
 	vector<string> words;
 	Obj (string s);
-	friend ostream& operator<<(ostream& os,const Obj& o){		os<<"["<<o.x<<"\t"<<o.y<<"]\t";
+	friend ostream& operator<<(ostream& os,const Obj& o){		
+		os<<"{\"x\":"<<o.x<<",\"y\":"<<o.y<<",\"text\":\"";
 		copy(o.words.begin(),o.words.end(),ostream_iterator<string>(os," "));
-		os<<endl;
+		os<<"\"}";
 		return os;
 	}
 };
@@ -325,7 +327,10 @@ vector<int> search(int n,string qp,double x,double y,vector<string> words){
 			//cout<<"pop NODE "<<e.pn->node_id<<" "<<e.dis<<endl;
 			if(e.pn->is_leaf){
 				for(int id:e.pn->obj_ids){
-					bool exist = binary_search(inter.begin(),inter.end(),id);
+					bool exist = true;
+					if(words.size()>0){
+						exist = binary_search(inter.begin(),inter.end(),id);
+					}
 					if(exist==false){
 						continue;
 					}
@@ -358,17 +363,6 @@ void search_and_output(int n,string qp,double x,double y,vector<string> words){
 	vector<int> res = search(n,qp,x,y,words);
 	output_res(res,x,y);
 }
-//extern "C" {
-int init(){
-	string f = "/Users/zhuo.zhang/Projects/minimap/minidata";
-	//f = "/Users/zhuo.zhang/Projects/minimap/sample_data";
-	f = "/Users/zhuo.zhang/Projects/minimap/zipcode-address.json";
-	//f = "/Users/zhuo.zhang/Projects/minimap/300data";
-	//f = "/Users/zhuo.zhang/Projects/minimap/30data";
-	build_index(f);
-	cout<<"build index finished"<<endl;
-	return 0;
-}
 vector<int> query(int n,double x,double y,string raw_words){
 	vector<int> res;
 	stringstream ss(raw_words);
@@ -386,12 +380,38 @@ vector<int> query(int n,double x,double y,string raw_words){
 	res = search(n,qp,x,y,vs);
 	return res;
 }
-//}
+extern "C" {
+int init(){
+	string f = "/Users/zhuo.zhang/Projects/minimap/minidata";
+	//f = "/Users/zhuo.zhang/Projects/minimap/sample_data";
+	f = "/Users/zhuo.zhang/Projects/minimap/zipcode-address.json";
+	f = "/Users/zhuo.zhang/Projects/minimap/300data";
+	//f = "/Users/zhuo.zhang/Projects/minimap/30data";
+	build_index(f);
+	cout<<"build index finished"<<endl;
+	return 17;
+}
+char* j_query(int n,double x,double y,const char* craw_words){
+	string raw_words = craw_words;
+	vector<int> res = query(n,x,y,raw_words);
+	stringstream ss;
+	ss<<"{\"data\":[";
+	for(int i=0;i<res.size();i++){
+		if(i!=0){
+			ss<<",";
+		}
+		ss<<objs[res[i]];
+	}
+	ss<<"]}"<<endl;
+	strcpy(py_buf,ss.str().c_str());
+	return py_buf;
+}
+}
 int main(){
 	try{
 		init();
 		bool batch = true;
-		batch = !batch;
+		//batch = !batch;
 		double q_x = -74.0;
 		double q_y = 40.5;
 		q_x = 103.811516;
@@ -428,6 +448,7 @@ int main(){
 		}else{ 
 			//search_and_output(q_n,q_p,q_x,q_y,vs);
 			output_res(query(q_n,q_x,q_y,data),q_x,q_y);
+			//cout<<j_query(q_n,q_x,q_y,data.c_str());
 		}
 	}catch(const exception& e){
 		cout<<e.what();
