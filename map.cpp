@@ -20,7 +20,7 @@
 #include<cstdlib>
 #define NODE 1
 #define OBJ 2
-#define M 15
+#define M 10
 #define SDBG 0
 using namespace std;
 char py_buf[8192];
@@ -48,10 +48,6 @@ Obj::Obj (string s){
 		cout<<s<<endl;
 		exit(-1);
 	}
-	/*
-	 for(int i=0;i<m.size();i++){
-	 cout<<i<<" "<<m[i]<<endl;
-	 }*/
 	y = stof(m[2]);
 	x = stof(m[3]);
 	stringstream ss(string(m[1]).substr(string(m[4]).length()+2)+" "+string(m[4]));
@@ -59,9 +55,9 @@ Obj::Obj (string s){
 	while(ss>>word){
 		word.erase(0,word.find_first_not_of("("));
 		word.erase(word.find_last_not_of(",)")+1);
-		if(isdigit(word[0])&&word.length()>=6)
-			continue;
 		if(word=="")
+			continue;
+		if(isdigit(word[0])&&word.length()>=6)
 			continue;
 		transform(word.begin(),word.end(),word.begin(),::tolower);
 		if(stov.find(word)==stov.end()){
@@ -93,17 +89,6 @@ struct PRNode
 	PRNode(vector<int>& ids,string pre,PRNode* parent){
 		this->parent = parent;
 		node_id = pr_id++;
-		//cout<<"build node "<<node_id<<endl;
-		/*
-         cout<<"build with "<<pre<<" and:"<<endl;
-         for(int i=0;i<ids.size();i++){
-         int id = ids[i];
-         cout<<id<<" ";
-         copy(objs[id].words.begin(),objs[id].words.end(),ostream_iterator<string>(cout," "));
-         cout<<endl;
-         }
-         cout<<endl;
-		 */
         int depth = 0;//0 for root
         PRNode* cur = this;
         while(cur->parent!=nullptr){
@@ -148,9 +133,6 @@ struct PRNode
 					if(w.substr(0,pre.length())!=pre){
 						continue;
 					}
-					if(w.length()<=pre.length()){
-						//cout<<"dummy"<<endl;
-					}
 					int index = (unsigned int)((unsigned char)w[pre.length()]);
 					if(vvi[index].size()==0||vvi[index].back()!=id){
 						vvi[index].push_back(id);
@@ -183,11 +165,8 @@ struct PRNode
 						vvi_inner[pos].push_back(n_id);
 					}
 					string new_pre = pre;
-					if(i==0){
-						//cout<<"skip push"<<endl;
-					}else{
+					if(i!=0){
 						new_pre.append(1,(char)((unsigned char)i));
-						new_pre = string(new_pre.c_str());
 					}
 					for(int f=0;f<4;f++){
 						if(vvi_inner[f].size()>0){
@@ -204,17 +183,11 @@ struct PRNode
 };
 class Qe{
 public:
-	int type;//pn 1 po 2
+	int type;//NODE 1 OBJ 2
 	PRNode* pn;
-	int po;//index
+	int po;
 	double dis;
 	Qe(int type,PRNode* pn,int po,double dis){
-		/*
-         if((unsigned long)((void *)pn)>(0x10066bd20000)){
-         cout<<static_cast <const void *> (pn)<<endl;
-         cout<<pn->node_id<<endl;
-         
-         }*/
         this->type = type;
 		this->pn = pn;
 		this->po = po;
@@ -233,11 +206,7 @@ void dump_tree(int level,PRNode* p){
     cout<<indent<<"Level "<<level<<endl;
     cout<<indent<<(p->is_leaf?"Leaf":"Inner")<<" ID "<<p->node_id<<" P "<<p->parent<<endl;
     cout<<indent<<p->b<<" "<<p->u<<" "<<p->l<<" "<<p->r<<" "<<p->pre<<endl;
-    
-	//cout<<level;
 	if(p->is_leaf){
-		//cout<<" leaf"<<endl;
-		
         for(int i=0;i<p->obj_ids.size();i++){
             int id = p->obj_ids[i];
             cout<<indent<<id<<" ";
@@ -245,7 +214,6 @@ void dump_tree(int level,PRNode* p){
             cout<<endl;
         }
 	}else{
-		//cout<<" node"<<endl;
 		for(int i=0;i<p->childs.size();i++){
 			dump_tree(level+1, p->childs[i]);
 		}
@@ -278,21 +246,12 @@ void build_index(string fname){
 	while(getline(ifs,line)){
 		objs.push_back(Obj(line));
 	}
-	auto stat = stat_str();
-	for(auto i:stat){
-		//cout<<i.first<<" "<<i.second<<endl;
-	}
-	//exit(-1);
-	//cout<<"read finished"<<endl;
 	auto obj_size = objs.size();
 	vector<int> init_obj_ids;
 	for(int i=0;i<obj_size;i++){
 		init_obj_ids.push_back(i);
 	}
 	root = new PRNode(init_obj_ids,"",nullptr);
-	//dump_tree(0, root);
-	//cout<<"index finished"<<endl;
-	//exit(-1);
 }
 inline double ldis(double x1,double y1,double x2,double y2){
 	return sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
@@ -319,12 +278,10 @@ double dis(PRNode *n,double x,double y){
 		case 8:
 			return ldis(x, y, n->r, n->b);
 		default:
-			cerr<<"hehe"<<endl;
 			exit(-1);
 	}
 }
 vector<int> search(int n,string qp,double x,double y,vector<string> words){
-    //cout<<"before search root is "<<static_cast <const void *> (root)<<endl;
 	vector<int> inter;
 	vector<int> res;
 	if(words.size()>0){
@@ -338,9 +295,6 @@ vector<int> search(int n,string qp,double x,double y,vector<string> words){
 	}
 	priority_queue<Qe> q;
     auto seed = Qe(NODE,root,0,0);
-    if(0){
-        cout<<"pop NODE "<<seed.pn->node_id<<" "<<seed.dis<<endl;
-    }
 	q.push(seed);
 	while(res.size()<n&&!q.empty()){
 		Qe e = q.top();
@@ -352,12 +306,10 @@ vector<int> search(int n,string qp,double x,double y,vector<string> words){
 			res.push_back(e.po);
 		}else{
             if(SDBG){
-                cout<<static_cast <const void *> (e.pn)<<endl;
                 cout<<"pop NODE "<<e.pn->node_id<<" "<<e.dis<<endl;
             }
 			if(e.pn->is_leaf){
 				for(int id:e.pn->obj_ids){
-                    //cout<<"checking "<<id<<endl;
 					bool exist = true;
 					if(words.size()>0){
 						exist = binary_search(inter.begin(),inter.end(),id);
@@ -396,8 +348,6 @@ vector<int> search(int n,string qp,double x,double y,vector<string> words){
 			}
 		}
 	}
-    
-    //cout<<"after search root is "<<static_cast <const void *> (root)<<endl;
 	return res;
 }
 void output_res(vector<int> res,double x,double y){
@@ -412,8 +362,6 @@ void search_and_output(int n,string qp,double x,double y,vector<string> words){
 	output_res(res,x,y);
 }
 vector<int> query(int n,double x,double y,string raw_words){
-    
-    //cout<<"before query root is "<<static_cast <const void *> (root)<<endl;
 	vector<int> res;
 	stringstream ss(raw_words);
 	string word;
@@ -428,31 +376,17 @@ vector<int> query(int n,double x,double y,string raw_words){
 	string qp = vs.back();
 	vs.pop_back();
 	res = search(n,qp,x,y,vs);
-    
-    
-    //cout<<"after query root is "<<static_cast <const void *> (root)<<endl;
 	return res;
     
 }
 extern "C" {
     int init(){
-        string f = "/Users/zhuo.zhang/Projects/minimap/minidata";
-        //f = "/Users/zhuo.zhang/Projects/minimap/sample_data";
-        f = "/Users/zhuo.zhang/Projects/minimap/zipcode-address.json";
-        //f = "/Users/zhuo.zhang/Projects/minimap/300data";
-        //f = "/Users/zhuo.zhang/Projects/minimap/30data";
-        //f = "/Users/zhuo.zhang/Projects/minimap/1000data";
-        //f = "/Users/zhuo.zhang/Projects/minimap/2000data";
-        //f = "/Users/zhuo.zhang/Projects/minimap/asiadata1000";
-        //f = "/Users/zhuo.zhang/Projects/minimap/jalan1000";
+        string f = "zipcode-address.json";
         build_index(f);
-        //cout<<"build index finished"<<endl;
-        return 17;
+        return 0;
     }
-    char* j_query(int n,double x,double y,const char* craw_words){
+    char* json_query(int n,double x,double y,const char* craw_words){
     	try{
-            
-            //cout<<"before jquery root is "<<static_cast <const void *> (root)<<endl;
 	        string raw_words = craw_words;
 	        vector<int> res = query(n,x,y,raw_words);
 	        stringstream ss;
@@ -465,7 +399,6 @@ extern "C" {
 	        }
 	        ss<<"]}"<<endl;
 	        strcpy(py_buf,ss.str().c_str());
-            //cout<<"after jquery root is "<<static_cast <const void *> (root)<<endl;
 	        return py_buf;
         }catch(const exception& e){
         	stringstream ss;
@@ -475,62 +408,4 @@ extern "C" {
         	return py_buf;
 		}
     }
-}
-int main(){
-	try{
-		init();
-		bool batch = true;
-		//batch = !batch;
-		double q_x = -74.0;
-		double q_y = 40.5;
-		q_x = 103.811516;
-		q_y = 1.2744;
-		int q_n = 10;
-		//q_n = 2;
-		q_n = 20;
-		vector<string> vs;
-		vs.push_back("palace");
-		string q_p = "blangah";
-		q_p = "s";
-		string data;
-		data = "drive Singapore Blan";
-		data = "mcdona";
-		data = "asia";
-		data = "sentosa j";
-		if(batch==false){
-			while(1){
-				vs.clear();
-				cout<<"prefix:";
-				cin>>q_p;
-				string vss;
-				cin.get();
-				cout<<"words:";
-				getline(cin,vss);
-				stringstream ss(vss);
-				copy(istream_iterator<string>(ss),istream_iterator<string>(),back_inserter(vs));
-				cout<<"num:";
-				cin>>q_n;
-				cout<<"x:";
-				string x_s;
-				cin>>x_s;
-				string y_s;
-				cout<<"y:";
-				cin>>y_s;
-				search_and_output(q_n,q_p,stod(x_s),stod(y_s),vs);
-			}
-		}else{
-			//search_and_output(q_n,q_p,q_x,q_y,vs);
-			output_res(query(q_n,q_x,q_y,data),q_x,q_y);
-			/*
-             for(int i=0;i<5;i++){
-             for(int j=1;j<=4;j++){
-             auto rr = j_query(q_n,q_x,q_y,data.substr(0,5-j).c_str());
-             cout<<rr<<endl;
-             }
-             }*/
-			//cout<<j_query(q_n,q_x,q_y,data.c_str());
-		}
-	}catch(const exception& e){
-		cout<<e.what();
-	}
 }
