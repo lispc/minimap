@@ -20,7 +20,7 @@
 #include<cstdlib>
 #define NODE 1
 #define OBJ 2
-#define M 5
+#define M 15
 #define SDBG 0
 using namespace std;
 char py_buf[8192];
@@ -89,7 +89,9 @@ struct PRNode
 	bool is_leaf;
 	vector<int> obj_ids;
 	vector<PRNode*> childs;
-	PRNode(vector<int>& ids,string pre){
+    PRNode* parent;
+	PRNode(vector<int>& ids,string pre,PRNode* parent){
+		this->parent = parent;
 		node_id = pr_id++;
 		//cout<<"build node "<<node_id<<endl;
 		/*
@@ -102,6 +104,12 @@ struct PRNode
          }
          cout<<endl;
 		 */
+        int depth = 0;//0 for root
+        PRNode* cur = this;
+        while(cur->parent!=nullptr){
+            depth++;
+            cur = cur->parent;
+        }
 		this->pre = pre;
 		b = 90;
 		u = -90;
@@ -120,7 +128,7 @@ struct PRNode
 			if(y>u)
 				u = y;
 		}
-		if(ids.size()<=M){
+		if(ids.size()<=M||depth>20){
 			obj_ids = ids;
 			is_leaf = true;
 		}else{
@@ -175,15 +183,15 @@ struct PRNode
 						vvi_inner[pos].push_back(n_id);
 					}
 					string new_pre = pre;
-					if(1==0){
+					if(i==0){
 						//cout<<"skip push"<<endl;
 					}else{
 						new_pre.append(1,(char)((unsigned char)i));
-						//new_pre = string(new_pre.c_str());
+						new_pre = string(new_pre.c_str());
 					}
 					for(int f=0;f<4;f++){
 						if(vvi_inner[f].size()>0){
-							PRNode* new_node = new PRNode(vvi_inner[f],new_pre);
+							PRNode* new_node = new PRNode(vvi_inner[f],new_pre,this);
 							childs.push_back(new_node);
 						}
 						
@@ -201,11 +209,12 @@ public:
 	int po;//index
 	double dis;
 	Qe(int type,PRNode* pn,int po,double dis){
-        if((unsigned long)((void *)pn)>(0x10066bd20000)){
-            cout<<static_cast <const void *> (pn)<<endl;
-            cout<<pn->node_id<<endl;
-            
-        }
+		/*
+         if((unsigned long)((void *)pn)>(0x10066bd20000)){
+         cout<<static_cast <const void *> (pn)<<endl;
+         cout<<pn->node_id<<endl;
+         
+         }*/
         this->type = type;
 		this->pn = pn;
 		this->po = po;
@@ -222,7 +231,7 @@ void dump_tree(int level,PRNode* p){
     string indent;
     indent.append(level,' ');
     cout<<indent<<"Level "<<level<<endl;
-    cout<<indent<<(p->is_leaf?"Leaf":"Inner")<<" ID "<<p->node_id<<endl;
+    cout<<indent<<(p->is_leaf?"Leaf":"Inner")<<" ID "<<p->node_id<<" P "<<p->parent<<endl;
     cout<<indent<<p->b<<" "<<p->u<<" "<<p->l<<" "<<p->r<<" "<<p->pre<<endl;
     
 	//cout<<level;
@@ -280,7 +289,7 @@ void build_index(string fname){
 	for(int i=0;i<obj_size;i++){
 		init_obj_ids.push_back(i);
 	}
-	root = new PRNode(init_obj_ids,"");
+	root = new PRNode(init_obj_ids,"",nullptr);
 	//dump_tree(0, root);
 	//cout<<"index finished"<<endl;
 	//exit(-1);
@@ -343,15 +352,12 @@ vector<int> search(int n,string qp,double x,double y,vector<string> words){
 			res.push_back(e.po);
 		}else{
             if(SDBG){
-                if((unsigned long)((void *)e.pn)>(0x10066bd20000)){
-                    cout<<"err"<<endl;
-                    cout<<"err"<<endl;
-                }
                 cout<<static_cast <const void *> (e.pn)<<endl;
                 cout<<"pop NODE "<<e.pn->node_id<<" "<<e.dis<<endl;
             }
 			if(e.pn->is_leaf){
 				for(int id:e.pn->obj_ids){
+                    //cout<<"checking "<<id<<endl;
 					bool exist = true;
 					if(words.size()>0){
 						exist = binary_search(inter.begin(),inter.end(),id);
@@ -438,8 +444,9 @@ extern "C" {
         //f = "/Users/zhuo.zhang/Projects/minimap/1000data";
         //f = "/Users/zhuo.zhang/Projects/minimap/2000data";
         //f = "/Users/zhuo.zhang/Projects/minimap/asiadata1000";
+        //f = "/Users/zhuo.zhang/Projects/minimap/jalan1000";
         build_index(f);
-        cout<<"build index finished"<<endl;
+        //cout<<"build index finished"<<endl;
         return 17;
     }
     char* j_query(int n,double x,double y,const char* craw_words){
@@ -489,6 +496,7 @@ int main(){
 		data = "drive Singapore Blan";
 		data = "mcdona";
 		data = "asia";
+		data = "sentosa j";
 		if(batch==false){
 			while(1){
 				vs.clear();
@@ -512,13 +520,14 @@ int main(){
 			}
 		}else{
 			//search_and_output(q_n,q_p,q_x,q_y,vs);
-			//output_res(query(q_n,q_x,q_y,data),q_x,q_y);
-			for(int i=0;i<5;i++){
-				for(int j=1;j<=4;j++){
-					auto rr = j_query(q_n,q_x,q_y,data.substr(0,5-j).c_str());
-                    cout<<rr<<endl;
-				}
-			}
+			output_res(query(q_n,q_x,q_y,data),q_x,q_y);
+			/*
+             for(int i=0;i<5;i++){
+             for(int j=1;j<=4;j++){
+             auto rr = j_query(q_n,q_x,q_y,data.substr(0,5-j).c_str());
+             cout<<rr<<endl;
+             }
+             }*/
 			//cout<<j_query(q_n,q_x,q_y,data.c_str());
 		}
 	}catch(const exception& e){

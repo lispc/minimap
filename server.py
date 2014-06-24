@@ -20,7 +20,7 @@ def qf():
 	x = float(request.args['x'])
 	y = float(request.args['y'])
 	s = request.args['s']
-	print x,y,s
+	#print x,y,s
 	res = lib.j_query(20,x,y,s)
 	return json.dumps(json.loads(res))
 app.run(debug=True)
